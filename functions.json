@@ -1,0 +1,34 @@
+[
+    {
+        "type": "function",
+        "function": {
+            "name": "recommend_recipes",
+            "strict": true,
+            "description": "recommend recipes according to the user's preferences",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "include": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": []
+                        },
+                        "description": "ingredients that the user wishes to include in the recipe"
+                    },
+                    "exclude": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "ingredients that the user mentioned to specifically exclude in the recipe. "
+                    },
+                    "headcount": {
+                        "type": "integer",
+                        "description": "the number of people the user will be cooking for. default value is 3"
+                    }
+                }
+            }
+        }
+    }
+]

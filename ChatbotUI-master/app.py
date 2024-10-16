@@ -67,12 +67,13 @@ def recommend_recipes(include: list[str], exclude: list[str], headcount: int=1):
         print("remaining_recipes: \n", remaining_recipes)
         head = remaining_recipes.head(1)
         print("Head: ", head)
+        remaining_recipes = remaining_recipes.drop(head.index[0])
         ans.append(head.T[head.index[0]].to_list())
         print(ans[-1])
         include_set = include_set - set([ing.lower() for ing in ans[-1][1].split(', ')])
     return_recipes = ""
     for i in range(len(ans)):
-        return_recipes += f"Recipe {i+1}: {ans[i][0]}\nIngredients: {ans[i][1]}\nInstructions: {ans[i][2]}\n\n"
+        return_recipes += f"Recipe {i+1}: {ans[i][0]}\nIngredients: {ans[i][1]}\nInstructions: \n{ans[i][2]}\n\n"
     return return_recipes
 
 

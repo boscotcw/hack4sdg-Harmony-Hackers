@@ -8,31 +8,23 @@ import re
 app = Flask(__name__)
 
 
-
-recipe_df = pd.read_csv('data_recipe_unnumbered.csv')
-# print("recipe_df content: \n", recipe_df)
-
 # toaster's together key
 os.environ["TOGETHER_API_KEY"] = "f00e4f3943a505ce68ff471fb2976c33040fcbb6c16874121ad76dbc53b70952" 
-
-# ideally, we build this list by checking all ingredients that appear in our recipe dataset
-ingredient_list = [
-    'Beef', 'Green onion', 'Garlic', 'Ginger', 'Oyster sauce', 'Sugar', 'Cornstarch', 'Oil', 'Salt', 'Soy sauce', 
-    'Black pepper powder', 'Eggs', 'Dried whitebait', 'Chicken wings', 'Potatoes', 'Onion', 'Dark soy sauce', 
-    'Light soy sauce', 'Pepper', 'Sesame oil', 'Spring chicken', 'Carrot', 'Broccoli', 'Monk fruit sugar', 
-    'Rice wine', 'Curry powder', 'Evaporated milk', 'Minced meat', 'Cold rice', 'Dried scallops', 
-    'Choy sum stems', 'Egg whites', 'Coriander', 'Seasoning', 'Rice wine', 'Chicken fillet', 'Salted fish', 
-    'Rice', 'Water spinach', 'Beef slices', 'Minced garlic', 'Chicken powder', 'Chili', 'Chicken drumsticks', 
-    'Star anise', 'Cotton tofu', 'Braising sauce', 'Palm sugar or brown sugar'
-]
-
 together = Together(api_key=os.environ.get("TOGETHER_API_KEY"))
+
+# currently a list of all ingredients that appears in our recipe list
+# in future development, this should be directly retrieved from supermarkets' available product list
+ingredient_df = pd.read_csv('supermarket_product_list.csv', index_col=0)
+ingredient_list = ingredient_df.index.to_list()
+discounted_ingredients = set(ingredient_df[ingredient_df['discount'].notnull()].index.to_list())
+# Naive implementation: only record the number of ingredients that are currently discounted
+recipe_df = pd.read_csv('data_recipe_unnumbered.csv')
+recipe_df['discount_count'] = recipe_df['ingredient_en'].apply(lambda x: len(set(x.split(', ')).intersection(set(discounted_ingredients))))
 
 with open("functions.json", "r") as json_file:
     funcs = json.load(json_file)
-
-funcs[0]["function"]["parameters"]["properties"]["include"]["items"]["enum"] = ingredient_list
-# funcs[0]["function"]["parameters"]["properties"]["exclude"]["items"]["enum"] = ingredient_list
+funcs[0]["function"]["parameters"]["properties"]["include_ingredient"]["items"]["enum"] = ingredient_list
+# funcs[0]["function"]["parameters"]["properties"]["exclude_ingredient"]["items"]["enum"] = ingredient_list
 
 messages = [
     {"role": "system", 
@@ -46,37 +38,42 @@ messages = [
 # Notable issue: When user asks to exclude an item not in our built in list of ingredients, AI panics and excludes everything that isn't included. More testing required.
 
 # main feature
-def recommend_recipes(include: list[str], exclude: list[str], headcount: int=1):
+def recommend_recipes(include_ingredient: list[str], 
+                      exclude_ingredient: list[str], 
+                      recipe_count: int=1,
+                      exclude_id: list[int]=[]) -> str:
     global recipe_df
-    print("Include: ", include)
-    print("Exclude: ", exclude)
-    print("Headcount: ", headcount)
+    print("Include: ", include_ingredient)
+    print("Exclude: ", exclude_ingredient)
+    print("Recipe_count: ", recipe_count)
     remaining_recipes = recipe_df
     # first we remove recipes containing excluded ingredients
-    for ingredient in exclude:
+    for ingredient in exclude_ingredient:
         # print(~remaining_recipes['ingredient_en'].str.contains(', '+ingredient+',', case=False, na=False))
-        remaining_recipes = remaining_recipes[~remaining_recipes['ingredient_en'].str.contains(', '+ingredient+',', case=False, na=False)]
+        remaining_recipes = remaining_recipes[~remaining_recipes['ingredient_en'].str.contains(ingredient, case=False, na=False)]
         print("remaining_recipes: \n", 
               remaining_recipes[~remaining_recipes['ingredient_en'].str.contains(', '+ingredient+',', case=False, na=False)])
-    include_set = set([i.lower() for i in include])
+    include_set = set([i.lower() for i in include_ingredient])
     ans = []
-    # Naive implementation: repeatedly pick the recipe that ticks off the most ingredients in the list
-    for i in range(max(headcount-1, 1)):
+    # Naive implementation: repeatedly select the recipe that ticks off the most items in the include list
+    for i in range(max(recipe_count, 1)):
         print(f'Dish {i}:') 
         remaining_recipes['matches'] = remaining_recipes['ingredient_en'].apply(lambda x: len(set(x.split(', ')).intersection(set(include_set))))
-        remaining_recipes = remaining_recipes.sort_values(by="matches", ascending=False)
+        remaining_recipes = remaining_recipes.sort_values(by=["matches", "discount_count"], ascending=False)
         print("remaining_recipes: \n", remaining_recipes)
         head = remaining_recipes.head(1)
         print("Head: ", head)
         if head.empty:  # no recipe found
             break
         remaining_recipes = remaining_recipes.drop(head.index[0])
-        ans.append(head.T[head.index[0]].to_list())
-        print(ans[-1])
+        selected_recipe = head.T[head.index[0]].to_list()
+        selected_recipe.append(head.index[0])
+        ans.append(selected_recipe)
+        print(selected_recipe)
         include_set = include_set - set([ing.lower() for ing in ans[-1][1].split(', ')])
     return_recipes = ""
     for i in range(len(ans)):
-        return_recipes += f"Recipe {i+1}: {ans[i][0]}\nIngredients: {ans[i][1]}\nInstructions: \n{ans[i][2]}\n\n"
+        return_recipes += f"Recipe {i+1}: {ans[i][0]} (recipe_id {ans[i][3]})\nIngredients: {ans[i][1]}\nInstructions: \n{ans[i][2]}\n\n"
     return return_recipes
 
 
@@ -107,9 +104,10 @@ def get_bot_response():
 
             if function_name == "recommend_recipes":
                 function_response = recommend_recipes(
-                    include=function_args.get("include"),
-                    exclude=function_args.get("exclude"),
-                    headcount=function_args.get("headcount"),
+                    include_ingredient=function_args.get("include_ingredient"),
+                    exclude_ingredient=function_args.get("exclude_ingredient"),
+                    recipe_count=function_args.get("recipe_count"),
+                    exclude_id=function_args.get("exclude_id"),
                 )
                 messages.append(
                     {
@@ -130,6 +128,8 @@ def get_bot_response():
     response_content = response.choices[0].message.content
     print(response_content)
     # there may need to be some extra bug handling here if any exists
+    if response_content == "":
+        response_content = "Sorry, I don't understand. Please provide more information."
     # return final content string
     return response_content
 

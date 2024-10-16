@@ -4,28 +4,35 @@
         "function": {
             "name": "recommend_recipes",
             "strict": true,
-            "description": "recommend recipes according to the user's preferences",
+            "description": "recommend recipes according to the user's needs. Only called when the user clearly asks for recipe recommendations",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "include": {
+                    "include_ingredient": {
                         "type": "array",
                         "items": {
                             "type": "string",
                             "enum": []
                         },
-                        "description": "ingredients that the user wishes to include in the recipe"
+                        "description": "ingredients that the user wishes to include in the recipe. if the item is not in enum, then ignore."
                     },
-                    "exclude": {
+                    "exclude_ingredient": {
                         "type": "array",
                         "items": {
                             "type": "string"
                         },
-                        "description": "ingredients that the user mentioned to specifically exclude in the recipe. "
+                        "description": "ingredients that the user wishes to exclude in the recipe. if the item is not in enum, then ignore."
                     },
-                    "headcount": {
+                    "recipe_count": {
                         "type": "integer",
-                        "description": "the number of people the user will be cooking for. default value is 3"
+                        "description": "the number of recipes to return. if this is not provided but user mentioned the count of people they are cooking for, choose the amount as count minus 1."
+                    },
+                    "exclude_id": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "description": "the id of recipes the user wishes to exclude for any reason. Do not use this parameter unless the user explicitly mentions it."
                     }
                 }
             }

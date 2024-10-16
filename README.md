@@ -1,4 +1,5 @@
 # GenAI Project
+![](Flow.png)
 
 Welcome to the GenAI Project! This project aims to recommend recipes using near-expired food items, promoting sustainability and reducing food waste.
 
@@ -9,9 +10,6 @@ Welcome to the GenAI Project! This project aims to recommend recipes using near-
 - **User-Friendly Interface**: Easy to use and navigate, making meal planning a breeze.
 
 
-## Contributing
-
-We welcome contributions! Please read our [contributing guidelines](CONTRIBUTING.md) for more details.
 
 ## License
 

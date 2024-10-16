@@ -37,9 +37,10 @@ funcs[0]["function"]["parameters"]["properties"]["include"]["items"]["enum"] = i
 messages = [
     {"role": "system", 
      "content": 
-     "You are a helpful assistant that can access external functions. "
-     "The responses from these function calls will be appended to this dialogue. "
-     "Please provide responses based on the information from these function calls."}
+     "You are a helpful cooking assistant whose main purpose is to recommend recipes. "
+     "You can provide suitable recipes according to what users want to include and exclude. "
+     "Please provide responses based on the users' requests. "
+     "If you are unable to understand the user's request, you should ask for clarification. "}
 ]
     
 # Notable issue: When user asks to exclude an item not in our built in list of ingredients, AI panics and excludes everything that isn't included. More testing required.
@@ -67,6 +68,8 @@ def recommend_recipes(include: list[str], exclude: list[str], headcount: int=1):
         print("remaining_recipes: \n", remaining_recipes)
         head = remaining_recipes.head(1)
         print("Head: ", head)
+        if head.empty:  # no recipe found
+            break
         remaining_recipes = remaining_recipes.drop(head.index[0])
         ans.append(head.T[head.index[0]].to_list())
         print(ans[-1])

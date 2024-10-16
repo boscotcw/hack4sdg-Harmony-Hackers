@@ -4,7 +4,7 @@
         "function": {
             "name": "recommend_recipes",
             "strict": true,
-            "description": "recommend recipes according to the user's preferences",
+            "description": "recommend recipes according to the user's needs. Only called when the user asks for recipe recommendations",
             "parameters": {
                 "type": "object",
                 "properties": {

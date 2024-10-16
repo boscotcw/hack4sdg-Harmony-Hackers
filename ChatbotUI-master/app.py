@@ -26,14 +26,16 @@ with open("functions.json", "r") as json_file:
 funcs[0]["function"]["parameters"]["properties"]["include_ingredient"]["items"]["enum"] = ingredient_list
 # funcs[0]["function"]["parameters"]["properties"]["exclude_ingredient"]["items"]["enum"] = ingredient_list
 
-messages = [
+messages_constant = [
     {"role": "system", 
      "content": 
      "You are a helpful cooking assistant whose main purpose is to recommend recipes. "
      "You can provide suitable recipes according to what users want to include and exclude. "
      "Please provide responses based on the users' requests. "
-     "If you are unable to understand the user's request, you should ask for clarification. "}
+     "If you are unable to understand the user's request, you should ask for clarification. "
+     "Keep the responses clear and concise. Give more information if user requests so. "}
 ]
+messages = messages_constant.copy()
     
 # Notable issue: When user asks to exclude an item not in our built in list of ingredients, AI panics and excludes everything that isn't included. More testing required.
 
@@ -55,6 +57,10 @@ def recommend_recipes(include_ingredient: list[str],
               remaining_recipes[~remaining_recipes['ingredient_en'].str.contains(', '+ingredient+',', case=False, na=False)])
     include_set = set([i.lower() for i in include_ingredient])
     ans = []
+    # remove recipes that are to be specifically excluded
+    if exclude_id is not None:
+        for exc in exclude_id:
+            remaining_recipes = remaining_recipes[remaining_recipes.index != exc]
     # Naive implementation: repeatedly select the recipe that ticks off the most items in the include list
     for i in range(max(recipe_count, 1)):
         print(f'Dish {i}:') 
@@ -88,7 +94,10 @@ def home():
 def get_bot_response():
     global messages
     query = request.args.get('msg')
-
+    # if user asks to reset the conversation
+    if query == "/reset":
+        messages = messages_constant.copy()
+        return "Conversation reset. Please provide your request."
     messages.append({"role": "user", "content": query})
     response = together.chat.completions.create(
         model="mistralai/Mixtral-8x7B-Instruct-v0.1",

@@ -1,5 +1,13 @@
 body {
-    font-family: Garamond;
+    background-color: lightgrey; 
+    font-family: "Inter", sans-serif;
+}
+
+.center-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 40%;
 }
 
 h1 {
@@ -28,6 +36,7 @@ h3 {
     margin-left: auto;
     margin-right: auto;
     width: 40%;
+    height: 30px;
     margin-top: 60px;
 }
 
@@ -35,40 +44,45 @@ h3 {
     width: 87%;
     border: none;
     border-bottom: 3px solid #009688;
-    font-family: monospace;
+    font-family: "Inter";
     font-size: 17px;
+    height: 30px;
 }
 
 #buttonInput {
     padding: 3px;
-    font-family: monospace;
+    font-family: "Inter";
     font-size: 17px;
+    width: 10%;
 }
 
 .userText {
-    color: white;
-    font-family: monospace;
+    color: black;
+    font-family: "Inter";
     font-size: 17px;
     text-align: right;
     line-height: 30px;
 }
 
 .userText span {
-    background-color: #009688;
+    background-color: #BFFFFC;
     padding: 10px;
     border-radius: 2px;
 }
 
 .botText {
-    color: white;
-    font-family: monospace;
+    color: black;
+    font-family: "Inter";
     font-size: 17px;
     text-align: left;
     line-height: 30px;
+    background-color: white; /* Add background color */
+    padding: 10px; /* Add padding */
+    border-radius: 3px; /* Add border-radius */
 }
 
 .botText span {
-    background-color: #EF5350;
+    /* background-color: white; */
     padding: 10px;
     border-radius: 2px;
 }
